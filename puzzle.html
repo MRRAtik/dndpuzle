@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Древний механизм</title>
+<style>
+  body {
+    background: #0d0d14;
+    color: #c0c0d0;
+    font-family: 'Georgia', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  h1 {
+    color: #c9a227;
+    font-size: 1.4em;
+    text-shadow: 0 0 20px rgba(201, 162, 39, 0.4);
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .puzzle-area {
+    position: relative;
+    padding: 100px 90px;
+    margin-bottom: 20px;
+  }
+  .stones-row {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+  }
+  .stone {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #3a3a5a, #1a1a2a);
+    border: 3px solid #5a5a7a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 48px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: inset 0 0 25px rgba(0,0,0,0.7), 0 0 10px rgba(0,0,0,0.5);
+    transition: box-shadow 0.3s ease;
+  }
+  .stone:hover {
+    box-shadow: inset 0 0 25px rgba(0,0,0,0.7), 0 0 25px rgba(100, 150, 255, 0.4);
+  }
+  .stone.spinning {
+    animation: spin 0.45s ease;
+  }
+  @keyframes spin {
+    0%   { transform: rotate(0deg) scale(1); }
+    50%  { transform: rotate(180deg) scale(0.85); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+  .target-marker {
+    position: absolute;
+    font-size: 38px;
+    opacity: 0.7;
+    pointer-events: none;
+    text-shadow: 0 0 18px rgba(201, 162, 39, 0.45);
+    filter: sepia(0.4) brightness(0.9);
+  }
+  .target-marker.t0 { top: 20px; left: 15px; }
+  .target-marker.t1 { top: 10px; left: 33%; }
+  .target-marker.t2 { bottom: 10px; right: 33%; }
+  .target-marker.t3 { bottom: 20px; right: 15px; }
+  .message {
+    min-height: 50px;
+    text-align: center;
+    font-size: 1.1em;
+    transition: all 0.5s ease;
+    max-width: 500px;
+  }
+  .message.success {
+    color: #4aff4a;
+    text-shadow: 0 0 25px rgba(74, 255, 74, 0.6);
+    font-size: 1.3em;
+    animation: pulse 1.5s ease infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.65; }
+  }
+</style>
+</head>
+<body>
+
+<h1>⚔ Древний механизм ⚔</h1>
+
+<div class="puzzle-area" id="puzzle-area">
+  <div class="stones-row" id="stones-row"></div>
+</div>
+<div class="message" id="message"></div>
+
+<script>
+const SYMBOLS = ['🦅', '🐋', '🐍', '🐺'];
+
+// Старт: Орёл, Змея, Кит, Волк
+const START   = [0, 2, 1, 3];
+
+// Цель: Кит, Волк, Орёл, Змея
+const TARGETS = [1, 3, 0, 2];
+
+const EFFECTS = {
+  0: [0, 1, 2, 3], // камень 1 → все
+  1: [1, 2, 3],    // камень 2 → 2, 3, 4
+  2: [0, 2],       // камень 3 → 1, 3
+  3: [3]           // камень 4 → только себя
+};
+
+let stones = [...START];
+
+function rotate(index) {
+  EFFECTS[index].forEach(i => {
+    stones[i] = (stones[i] + 1) % 4;
+  });
+  EFFECTS[index].forEach(i => {
+    const el = document.getElementById('stone-' + i);
+    el.classList.add('spinning');
+    el.textContent = SYMBOLS[stones[i]];
+    setTimeout(() => el.classList.remove('spinning'), 450);
+  });
+  checkWin();
+}
+
+function checkWin() {
+  const msg = document.getElementById('message');
+  const win = stones.every((s, i) => s === TARGETS[i]);
+  if (win) {
+    msg.textContent = '✦ Механизм приходит в движение. Стена отъезжает в сторону. ✦';
+    msg.className = 'message success';
+  } else {
+    msg.textContent = '';
+    msg.className = 'message';
+  }
+}
+
+function render() {
+  const stonesRow = document.getElementById('stones-row');
+  const puzzleArea = document.getElementById('puzzle-area');
+
+  stonesRow.innerHTML = '';
+  puzzleArea.querySelectorAll('.target-marker').forEach(el => el.remove());
+
+  stones.forEach((val, i) => {
+    const stone = document.createElement('div');
+    stone.className = 'stone';
+    stone.id = 'stone-' + i;
+    stone.textContent = SYMBOLS[val];
+    stone.onclick = () => rotate(i);
+    stonesRow.appendChild(stone);
+  });
+
+  TARGETS.forEach((t, i) => {
+    const marker = document.createElement('div');
+    marker.className = 'target-marker t' + i;
+    marker.textContent = SYMBOLS[t];
+    puzzleArea.appendChild(marker);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
